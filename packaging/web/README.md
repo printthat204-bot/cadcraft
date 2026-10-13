@@ -50,6 +50,30 @@ location /cadcraft/ {
 
 Local test: `python3 -m http.server 8765` inside the folder, then open http://localhost:8765/.
 
+## Building without network
+
+The web build needs the `wasm32-unknown-unknown` target, [trunk](https://trunkrs.dev),
+`wasm-bindgen-cli` at the exact `wasm-bindgen` version in `Cargo.lock`, and `wasm-opt` (binaryen;
+`index.html` asks for `data-wasm-opt="z"`). Trunk downloads the last two when they're missing, so
+install them first to build offline. The prebuilt trunk and binaryen releases on GitHub work when
+`cargo install trunk` doesn't (it compiles C dependencies that need a recent compiler).
+
+While online, vendor every crate once:
+
+```sh
+cargo vendor --versioned-dirs /path/to/vendor > vendor-config.toml
+```
+
+Copy `vendor-config.toml` to `apps/cadcraft-web/.cargo/config.toml` and add `[net] offline = true`.
+Trunk can't pass `--config` to cargo, but cargo reads that file because trunk runs from
+`apps/cadcraft-web`. Keep it out of commits (`.git/info/exclude`): it names a local path. Then:
+
+```sh
+cd apps/cadcraft-web && trunk build --release --offline
+```
+
+The site lands in `dist/web/`. Re-run `cargo vendor` after `Cargo.lock` changes.
+
 ## Embedding in a page (iframe)
 
 ```html
